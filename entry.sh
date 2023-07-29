@@ -11,12 +11,6 @@ export PUID
 : ${PGID:=1000}
 export PGID
 
-: ${APACHE_RUN_USER:=$USERNAME}
-export APACHE_RUN_USER
-: ${APACHE_RUN_GROUP:=$GROUPNAME}
-export APACHE_RUN_GROUP
-
-
 OLD_GID=$(id -g $USERNAME)
 if [ "${PGID}" != "automatic" ] && [ "$PGID" != "$OLD_GID" ]; then
 
@@ -40,8 +34,6 @@ if [ "${PUID}" != "automatic" ] && [ "$PUID" != "$OLD_UID" ]; then
 
 fi
 
-chown $USERNAME:$GROUPNAME /usr/local/etc/php/conf-custom.d -R
-
 if [ -d /docker-entrypoint.d ]; then
   for i in /docker-entrypoint.d/*.sh; do
     if [ -r $i ]; then
@@ -53,6 +45,3 @@ fi
 
 # 链式调用下一个 shell
 exec "$@"
-
-# 最后执行一次启动 apache
-apache2ctl start

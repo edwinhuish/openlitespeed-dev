@@ -17,19 +17,8 @@ PUID=${3:-"automatic"}
 PGID=${4:-"automatic"}
 UPGRADE_PACKAGES=${5:-"true"}
 INSTALL_OH_MYS=${6:-"true"}
-ADD_NON_FREE_PACKAGES=${7:-"false"}
 SCRIPT_DIR="$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)"
 MARKER_FILE="/usr/local/etc/vscode-dev-containers/common"
-
-echo "INSTALL_ZSH=${INSTALL_ZSH}"
-echo "USERNAME=${USERNAME}"
-echo "PUID=${PUID}"
-echo "PGID=${PGID}"
-echo "UPGRADE_PACKAGES=${UPGRADE_PACKAGES}"
-echo "INSTALL_OH_MYS=${INSTALL_OH_MYS}"
-echo "ADD_NON_FREE_PACKAGES=${ADD_NON_FREE_PACKAGES}"
-echo "SCRIPT_DIR=${SCRIPT_DIR}"
-echo "MARKER_FILE=${MARKER_FILE}"
 
 if [ "$(id -u)" -ne 0 ]; then
   echo -e 'Script must be run as root. Use sudo, su, or add "USER root" to your Dockerfile before running this script.'
@@ -122,27 +111,7 @@ if [ "${PACKAGES_ALREADY_INSTALLED}" != "true" ]; then
         manpages-dev \
         init-system-helpers"
 
-  # Needed for adding manpages-posix and manpages-posix-dev which are non-free packages in Debian
-  if [ "${ADD_NON_FREE_PACKAGES}" = "true" ]; then
-    # Bring in variables from /etc/os-release like VERSION_CODENAME
-    . /etc/os-release
-    sed -i -E "s/deb http:\/\/(deb|httpredir)\.debian\.org\/debian ${VERSION_CODENAME} main/deb http:\/\/\1\.debian\.org\/debian ${VERSION_CODENAME} main contrib non-free/" /etc/apt/sources.list
-    sed -i -E "s/deb-src http:\/\/(deb|httredir)\.debian\.org\/debian ${VERSION_CODENAME} main/deb http:\/\/\1\.debian\.org\/debian ${VERSION_CODENAME} main contrib non-free/" /etc/apt/sources.list
-    sed -i -E "s/deb http:\/\/(deb|httpredir)\.debian\.org\/debian ${VERSION_CODENAME}-updates main/deb http:\/\/\1\.debian\.org\/debian ${VERSION_CODENAME}-updates main contrib non-free/" /etc/apt/sources.list
-    sed -i -E "s/deb-src http:\/\/(deb|httpredir)\.debian\.org\/debian ${VERSION_CODENAME}-updates main/deb http:\/\/\1\.debian\.org\/debian ${VERSION_CODENAME}-updates main contrib non-free/" /etc/apt/sources.list
-    sed -i "s/deb http:\/\/security\.debian\.org\/debian-security ${VERSION_CODENAME}\/updates main/deb http:\/\/security\.debian\.org\/debian-security ${VERSION_CODENAME}\/updates main contrib non-free/" /etc/apt/sources.list
-    sed -i "s/deb-src http:\/\/security\.debian\.org\/debian-security ${VERSION_CODENAME}\/updates main/deb http:\/\/security\.debian\.org\/debian-security ${VERSION_CODENAME}\/updates main contrib non-free/" /etc/apt/sources.list
-    sed -i "s/deb http:\/\/deb\.debian\.org\/debian ${VERSION_CODENAME}-backports main/deb http:\/\/deb\.debian\.org\/debian ${VERSION_CODENAME}-backports main contrib non-free/" /etc/apt/sources.list
-    sed -i "s/deb-src http:\/\/deb\.debian\.org\/debian ${VERSION_CODENAME}-backports main/deb http:\/\/deb\.debian\.org\/debian ${VERSION_CODENAME}-backports main contrib non-free/" /etc/apt/sources.list
-    # Handle bullseye location for security https://www.debian.org/releases/bullseye/amd64/release-notes/ch-information.en.html
-    sed -i "s/deb http:\/\/security\.debian\.org\/debian-security ${VERSION_CODENAME}-security main/deb http:\/\/security\.debian\.org\/debian-security ${VERSION_CODENAME}-security main contrib non-free/" /etc/apt/sources.list
-    sed -i "s/deb-src http:\/\/security\.debian\.org\/debian-security ${VERSION_CODENAME}-security main/deb http:\/\/security\.debian\.org\/debian-security ${VERSION_CODENAME}-security main contrib non-free/" /etc/apt/sources.list
-    echo "Running apt-get update..."
-    apt-get update
-    package_list="${package_list} manpages-posix manpages-posix-dev"
-  else
-    apt_get_update_if_needed
-  fi
+  apt_get_update_if_needed
 
   # Install libssl1.1 if available
   if [[ ! -z $(apt-cache --names-only search ^libssl1.1$) ]]; then
@@ -173,11 +142,11 @@ if [ "${PACKAGES_ALREADY_INSTALLED}" != "true" ]; then
 fi
 
 # Get to latest versions of all packages
-# if [ "${UPGRADE_PACKAGES}" = "true" ]; then
-#   apt_get_update_if_needed
-#   apt-get -y upgrade --no-install-recommends
-#   apt-get autoremove -y
-# fi
+if [ "${UPGRADE_PACKAGES}" = "true" ]; then
+  apt_get_update_if_needed
+  apt-get -y upgrade --no-install-recommends
+  apt-get autoremove -y
+fi
 
 # Ensure at least the en_US.UTF-8 UTF-8 locale is available.
 # Common need for both applications and things like the agnoster ZSH theme.
@@ -212,20 +181,18 @@ else
     else
       groupadd --gid $PGID $USERNAME
     fi
-
-    if egrep "^$USERNAME:" /etc/passwd > /dev/null 2>&1; then
-      echo "存在用户 $USERNAME, 跳过创建用户"
-    else 
-      echo "不存在用户 $USERNAME，$group_name"
-      useradd -g $group_name -m $USERNAME
-    fi
-    ################# 修正（结束） #################
   fi
   if [ "${PUID}" = "automatic" ]; then
     useradd -s /bin/bash --gid $PGID -m $USERNAME
   else
-    useradd -s /bin/bash --uid $PUID --gid $PGID -m $USERNAME
+    if egrep "^$USERNAME:" /etc/passwd > /dev/null 2>&1; then
+      echo "存在用户 $USERNAME, 跳过创建用户"
+    else 
+      echo "不存在用户 $USERNAME，$group_name"
+      useradd -s /bin/bash --uid $PUID --gid $PGID -m $USERNAME
+    fi
   fi
+  ################# 修正（结束） #################
 fi
 
 # Add sudo support for non-root user
