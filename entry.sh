@@ -2,10 +2,16 @@
 set -e
 
 : ${USERNAME:=www}
-: ${GROUPNAME:="$(id -gn $USERNAME)"}
 
 : ${PUID:=1000}
 : ${PGID:=1000}
+
+if ! egrep "^$USERNAME:" /etc/passwd > /dev/null 2>&1; then
+  echo "不存在用户，开始新增：$USERNAME"
+  useradd -s /bin/bash --uid $PUID --gid $PGID -m $USERNAME
+fi
+
+: ${GROUPNAME:="$(id -gn $USERNAME)"}
 
 OLD_GID=$(id -g $USERNAME)
 if [ "${PGID}" != "automatic" ] && [ "$PGID" != "$OLD_GID" ]; then
