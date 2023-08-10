@@ -3,7 +3,6 @@ set -e
 
 : ${USERNAME:=www}
 : ${GROUPNAME:="$(id -gn $USERNAME)"}
-export GROUPNAME=${GROUPNAME}
 
 : ${PUID:=1000}
 : ${PGID:=1000}
@@ -32,12 +31,11 @@ if [ "${PUID}" != "automatic" ] && [ "$PUID" != "$OLD_UID" ]; then
 fi
 
 if [ -d /entry.d ]; then
-  for script in /entry.d/*.sh; do
-    if [ -r $script ]; then
-      /bin/sh $script
-    fi
+  for script in $(ls /entry.d/*.sh | sort); do
+    echo "\n\n========================== Processing $script ==========================\n\n";
+    chmod +x $script;
+    $script || exit 1;
   done
-  unset script
 fi
 
 # 链式调用下一个 shell

@@ -29,6 +29,11 @@ ARG USERNAME=www
 ARG PUID=1000
 ARG PGID=$PUID
 
+ENV USERNAME=${USERNAME}
+ENV GROUPNAME=${USERNAME}
+ENV PUID=${PUID}
+ENV PGID=${PGID}
+
 RUN apt-get update && \
   bash /tmp/library-scripts/common-ubuntu.sh "${INSTALL_ZSH}" "${USERNAME}" "${PUID}" "${PGID}" "${UPGRADE_PACKAGES}" "true" "true"
 
