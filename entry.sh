@@ -2,14 +2,11 @@
 set -e
 
 : ${USERNAME:=www}
-export USERNAME
-GROUPNAME="$(id -gn $USERNAME)"
-export GROUPNAME
+: ${GROUPNAME:="$(id -gn $USERNAME)"}
+export GROUPNAME=${GROUPNAME}
 
 : ${PUID:=1000}
-export PUID
 : ${PGID:=1000}
-export PGID
 
 OLD_GID=$(id -g $USERNAME)
 if [ "${PGID}" != "automatic" ] && [ "$PGID" != "$OLD_GID" ]; then
