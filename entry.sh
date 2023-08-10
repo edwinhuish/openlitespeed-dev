@@ -34,13 +34,13 @@ if [ "${PUID}" != "automatic" ] && [ "$PUID" != "$OLD_UID" ]; then
 
 fi
 
-if [ -d /docker-entrypoint.d ]; then
-  for i in /docker-entrypoint.d/*.sh; do
-    if [ -r $i ]; then
-      /bin/sh $i
+if [ -d /entry.d ]; then
+  for script in /entry.d/*.sh; do
+    if [ -r $script ]; then
+      /bin/sh $script
     fi
   done
-  unset i
+  unset script
 fi
 
 # 链式调用下一个 shell
