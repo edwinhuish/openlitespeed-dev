@@ -8,7 +8,7 @@ set -e
 
 if ! egrep "^$USERNAME:" /etc/passwd > /dev/null 2>&1; then
   echo "不存在用户，开始新增：$USERNAME"
-  useradd -s /bin/bash --uid $PUID --gid $PGID -m $USERNAME
+  useradd -s /bin/bash --uid $PUID -m $USERNAME
 fi
 
 : ${GROUPNAME:="$(id -gn $USERNAME)"}
